@@ -9,23 +9,24 @@ import android.view.MotionEvent;
 import android.view.View;
 
 public class TelaPerfil extends View {
-    Paint tinta = new Paint();
-    GerenciadorJogador jogador;
-    RectF btnVoltar;
-    String[] emojis = {"🎱", "🏆", "⭐", "🎯", "🔥", "💪", "👑", "🌟"};
-    int avatarIndex = 0;
+    private Paint tinta = new Paint();
+    private GerenciadorJogador jogador;
+    private RectF btnVoltar;
     
+    private float avatarX, avatarY, avatarRaio = 80;
+
     public TelaPerfil(Context context) {
         super(context);
         jogador = new GerenciadorJogador(context);
         setBackgroundColor(Color.parseColor("#0d0d1a"));
-        avatarIndex = (int)(System.currentTimeMillis() % emojis.length);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         btnVoltar = new RectF(40, 40, 180, 90);
+        avatarX = w / 2f;
+        avatarY = 200;
     }
 
     @Override
@@ -37,7 +38,9 @@ public class TelaPerfil extends View {
         int xpMax = jogador.getXpProximoNivel();
         int partidas = jogador.getPartidas();
         int vitorias = jogador.getVitorias();
-        float progresso = (float)xp / xpMax * 100;
+        int dolares = jogador.getDolares();
+        int diamantes = jogador.getDiamantes();
+        float progresso = (float)xp / xpMax;
         
         // Título
         tinta.setColor(Color.WHITE);
@@ -45,48 +48,41 @@ public class TelaPerfil extends View {
         tinta.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("👤 MEU PERFIL", getWidth()/2, 90, tinta);
         
-        // Avatar grande
-        float cx = getWidth()/2;
-        float cy = 200;
-        float raio = 80;
-        
-        // Círculo do avatar
+        // Avatar
         tinta.setColor(Color.parseColor("#FFD700"));
         tinta.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(cx, cy, raio, tinta);
-        tinta.setColor(Color.BLACK);
+        canvas.drawCircle(avatarX, avatarY, avatarRaio, tinta);
+        tinta.setColor(Color.WHITE);
         tinta.setStyle(Paint.Style.STROKE);
         tinta.setStrokeWidth(5);
-        canvas.drawCircle(cx, cy, raio, tinta);
+        canvas.drawCircle(avatarX, avatarY, avatarRaio, tinta);
         
-        // Emoji do avatar
         tinta.setColor(Color.BLACK);
         tinta.setStyle(Paint.Style.FILL);
         tinta.setTextSize(70);
         tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(emojis[avatarIndex], cx, cy + 25, tinta);
+        canvas.drawText(jogador.getAvatarEmoji(), avatarX, avatarY + 25, tinta);
         
-        // Nível abaixo do avatar
+        // Nível
         tinta.setColor(Color.parseColor("#FFD700"));
         tinta.setTextSize(30);
-        canvas.drawText("⭐ NÍVEL " + nivel, cx, cy + raio + 45, tinta);
+        canvas.drawText("⭐ NÍVEL " + nivel, getWidth()/2, avatarY + avatarRaio + 50, tinta);
         
-        // Barra de XP
-        float barX = 80;
-        float barY = cy + raio + 70;
-        float barWidth = getWidth() - 160;
-        float barHeight = 30;
+        // Moedas
+        tinta.setColor(Color.WHITE);
+        tinta.setTextSize(28);
+        canvas.drawText("💵 " + dolares + "  💎 " + diamantes, getWidth()/2, avatarY + avatarRaio + 90, tinta);
         
+        // Barra XP
+        float barX = 80, barY = avatarY + avatarRaio + 120;
+        float barWidth = getWidth() - 160, barHeight = 30;
         tinta.setColor(Color.parseColor("#2a2a4a"));
         tinta.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(barX, barY, barX + barWidth, barY + barHeight, 20, 20, tinta);
-        
         tinta.setColor(Color.parseColor("#2ECC71"));
-        canvas.drawRoundRect(barX, barY, barX + (barWidth * progresso / 100), barY + barHeight, 20, 20, tinta);
-        
+        canvas.drawRoundRect(barX, barY, barX + (barWidth * progresso), barY + barHeight, 20, 20, tinta);
         tinta.setColor(Color.WHITE);
         tinta.setTextSize(20);
-        tinta.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(xp + " / " + xpMax + " XP", barX + barWidth/2, barY + 22, tinta);
         
         // Estatísticas
@@ -95,7 +91,6 @@ public class TelaPerfil extends View {
         tinta.setTextSize(30);
         tinta.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("📊 ESTATÍSTICAS", 60, statsY, tinta);
-        
         statsY += 50;
         tinta.setColor(Color.WHITE);
         tinta.setTextSize(26);
@@ -106,13 +101,18 @@ public class TelaPerfil extends View {
         float taxa = partidas > 0 ? (vitorias * 100 / partidas) : 0;
         canvas.drawText("📈 Taxa de vitória: " + (int)taxa + "%", 80, statsY, tinta);
         
-        // Botão voltar
+        // Dica avatar
+        tinta.setColor(Color.GRAY);
+        tinta.setTextSize(20);
+        tinta.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("👆 Clique no avatar para trocar", getWidth()/2, getHeight() - 60, tinta);
+        
+        // Voltar
         tinta.setColor(Color.parseColor("#333366"));
         tinta.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(btnVoltar, 15, 15, tinta);
         tinta.setColor(Color.WHITE);
         tinta.setTextSize(28);
-        tinta.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("◀ VOLTAR", btnVoltar.centerX(), btnVoltar.centerY() + 10, tinta);
     }
 
@@ -126,14 +126,11 @@ public class TelaPerfil extends View {
                 return true;
             }
             
-            // Clique no avatar - troca o emoji (preparado para futuras imagens)
-            float cx = getWidth()/2;
-            float cy = 200;
-            float raio = 80;
-            float dx = x - cx;
-            float dy = y - cy;
-            if (Math.sqrt(dx*dx + dy*dy) < raio) {
-                avatarIndex = (avatarIndex + 1) % emojis.length;
+            // Clique no avatar → trocar emoji
+            float dx = x - avatarX;
+            float dy = y - avatarY;
+            if (Math.sqrt(dx*dx + dy*dy) < avatarRaio) {
+                jogador.proximoAvatar();
                 invalidate();
                 return true;
             }

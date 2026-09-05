@@ -5,104 +5,194 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.View;
 
 public class TelaMenu extends View {
-    Paint tinta = new Paint();
-    RectF btnJogar, btnPerfil, btnSair;
-    GerenciadorJogador jogador;
+    private Paint tinta = new Paint();
+    private GerenciadorJogador jogador;
+    
+    // Botões
+    private RectF btnJogar, btnPerfil, btnLoja, btnSair;
+    
+    // Avatar
+    private float avatarX = 100, avatarY = 80, avatarRaio = 45;
+    
+    private static final int COR_FUNDO = Color.parseColor("#0a0a1a");
+    private static final int COR_DOURADO = Color.parseColor("#FFD700");
+    private static final int COR_VERDE = Color.parseColor("#2ECC71");
+    private static final int COR_AZUL = Color.parseColor("#3498DB");
+    private static final int COR_VERMELHO = Color.parseColor("#E74C3C");
+    private static final int COR_CINZA = Color.parseColor("#2a2a4a");
 
     public TelaMenu(Context context) {
         super(context);
         jogador = new GerenciadorJogador(context);
-        setBackgroundColor(Color.parseColor("#0a0a1a"));
+        setBackgroundColor(COR_FUNDO);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        float cx = w/2;
-        float cy = h/2;
         
-        btnJogar = new RectF(cx - 180, cy - 100, cx + 180, cy - 30);
-        btnPerfil = new RectF(cx - 180, cy + 20, cx + 180, cy + 90);
-        btnSair = new RectF(cx - 180, cy + 140, cx + 180, cy + 210);
+        float cx = w / 2f;
+        float cy = h / 2f;
+        
+        float larguraBotao = 220;
+        float alturaBotao = 65;
+        float inicioY = cy - alturaBotao / 2;
+        
+        btnJogar = new RectF(cx - 150, inicioY - 80, cx + 150, inicioY - 80 + 80);
+        btnPerfil = new RectF(cx - 360, inicioY, cx - 360 + larguraBotao, inicioY + alturaBotao);
+        btnLoja = new RectF(cx + 140, inicioY, cx + 140 + larguraBotao, inicioY + alturaBotao);
+        btnSair = new RectF(cx - 100, inicioY + 100, cx + 100, inicioY + 100 + alturaBotao);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         
-        // Título
-        tinta.setColor(Color.WHITE);
-        tinta.setTextSize(70);
-        tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("🎱 PROJETO 8", getWidth()/2, 120, tinta);
+        desenharFundo(canvas);
+        desenharAvatar(canvas);
+        desenharInfoTopo(canvas);
+        desenharTitulo(canvas);
+        desenharBotao(canvas, btnJogar, "🏆 JOGAR", COR_DOURADO, Color.BLACK, true);
+        desenharBotao(canvas, btnPerfil, "👤 PERFIL", COR_AZUL, Color.WHITE, false);
+        desenharBotao(canvas, btnLoja, "🛒 LOJA", COR_VERDE, Color.BLACK, false);
+        desenharBotao(canvas, btnSair, "🚪 SAIR", COR_VERMELHO, Color.WHITE, false);
         
-        // Nível
-        int nivel = jogador.getNivel();
-        tinta.setColor(Color.parseColor("#FFD700"));
-        tinta.setTextSize(35);
-        canvas.drawText("⭐ NÍVEL " + nivel, getWidth()/2, 180, tinta);
-        
-        // Barra de XP
-        int progresso = (int)((float)jogador.getXp() / jogador.getXpProximoNivel() * 100);
-        float barX = getWidth()/2 - 180;
-        float barY = 200;
-        float barWidth = 360;
-        float barHeight = 25;
-        
-        tinta.setColor(Color.parseColor("#333366"));
-        tinta.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(barX, barY, barX + barWidth, barY + barHeight, 15, 15, tinta);
-        
-        tinta.setColor(Color.parseColor("#2ECC71"));
-        canvas.drawRoundRect(barX, barY, barX + (barWidth * progresso / 100), barY + barHeight, 15, 15, tinta);
-        
-        tinta.setColor(Color.WHITE);
+        tinta.setColor(Color.parseColor("#444466"));
         tinta.setTextSize(18);
         tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(jogador.getXp() + "/" + jogador.getXpProximoNivel() + " XP", 
-                        getWidth()/2, barY + 18, tinta);
-        
-        // Estatísticas rápidas
-        tinta.setColor(Color.GRAY);
-        tinta.setTextSize(22);
-        tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("🎯 " + jogador.getPartidas() + " partidas  🏆 " + jogador.getVitorias() + " vitórias", 
-                        getWidth()/2, 260, tinta);
-        
-        // Linha
-        tinta.setColor(Color.parseColor("#333366"));
-        tinta.setStrokeWidth(2);
-        canvas.drawLine(80, 290, getWidth()-80, 290, tinta);
-        
-        // Botões
-        desenharBotao(canvas, btnJogar, "🏆 JOGAR", true);
-        desenharBotao(canvas, btnPerfil, "👤 PERFIL", false);
-        desenharBotao(canvas, btnSair, "🚪 SAIR", false);
-        
-        // Rodapé
-        tinta.setTextSize(16);
-        tinta.setColor(Color.parseColor("#333355"));
-        canvas.drawText("© 2026 Projeto 8 - Android", getWidth()/2, getHeight() - 30, tinta);
+        canvas.drawText("v1.0", getWidth() - 80, getHeight() - 30, tinta);
     }
-
-    private void desenharBotao(Canvas canvas, RectF rect, String texto, boolean destaque) {
-        tinta.setColor(destaque ? Color.parseColor("#FFD700") : Color.parseColor("#2a2a4a"));
+    
+    private void desenharFundo(Canvas canvas) {
+        tinta.setColor(COR_FUNDO);
         tinta.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(rect, 20, 20, tinta);
+        canvas.drawRect(0, 0, getWidth(), getHeight(), tinta);
         
-        tinta.setColor(destaque ? Color.parseColor("#FFA500") : Color.parseColor("#444466"));
+        float margem = 40;
+        tinta.setColor(Color.parseColor("#1a2a3a"));
+        tinta.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(margem, margem, getWidth() - margem, getHeight() - margem, 30, 30, tinta);
+        
+        tinta.setColor(Color.parseColor("#2d7d46"));
+        tinta.setStrokeWidth(5);
         tinta.setStyle(Paint.Style.STROKE);
-        tinta.setStrokeWidth(3);
-        canvas.drawRoundRect(rect, 20, 20, tinta);
+        canvas.drawRoundRect(margem + 20, margem + 20, getWidth() - margem - 20, getHeight() - margem - 20, 20, 20, tinta);
         
-        tinta.setColor(destaque ? Color.BLACK : Color.WHITE);
-        tinta.setTextSize(32);
+        float cx = getWidth() / 2f;
+        float cy = getHeight() / 2f;
+        tinta.setColor(Color.argb(50, 255, 255, 255));
+        tinta.setStyle(Paint.Style.STROKE);
+        tinta.setStrokeWidth(2);
+        canvas.drawCircle(cx, cy, 200, tinta);
+        canvas.drawCircle(cx, cy, 400, tinta);
+    }
+    
+    private void desenharAvatar(Canvas canvas) {
+        // Círculo do avatar
+        tinta.setColor(COR_DOURADO);
+        tinta.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(avatarX, avatarY, avatarRaio, tinta);
+        
+        tinta.setColor(Color.WHITE);
+        tinta.setStyle(Paint.Style.STROKE);
+        tinta.setStrokeWidth(4);
+        canvas.drawCircle(avatarX, avatarY, avatarRaio, tinta);
+        
+        // Emoji do avatar
+        tinta.setColor(Color.BLACK);
+        tinta.setStyle(Paint.Style.FILL);
+        tinta.setTextSize(avatarRaio * 1.2f);
         tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(texto, rect.centerX(), rect.centerY() + 12, tinta);
+        canvas.drawText(jogador.getAvatarEmoji(), avatarX, avatarY + avatarRaio * 0.4f, tinta);
+        
+        // Brilho
+        tinta.setColor(Color.argb(100, 255, 255, 255));
+        tinta.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(avatarX - avatarRaio * 0.3f, avatarY - avatarRaio * 0.3f, avatarRaio * 0.3f, tinta);
+    }
+    
+    private void desenharInfoTopo(Canvas canvas) {
+        // Nome/Nível
+        tinta.setColor(Color.WHITE);
+        tinta.setTextSize(22);
+        tinta.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("Projeto 8", avatarX + avatarRaio + 20, avatarY - 10, tinta);
+        
+        tinta.setColor(COR_DOURADO);
+        tinta.setTextSize(18);
+        canvas.drawText("⭐ Nível " + jogador.getNivel(), avatarX + avatarRaio + 20, avatarY + 25, tinta);
+        
+        // 💵 Dólares e 💎 Diamantes (topo direito)
+        String saldo = "💵 " + jogador.getDolares() + "  💎 " + jogador.getDiamantes();
+        tinta.setColor(COR_DOURADO);
+        tinta.setTextSize(28);
+        tinta.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(saldo, getWidth() - 30, 80, tinta);
+        
+        // XP
+        String xpText = "⭐ " + jogador.getXp() + "/" + jogador.getXpProximoNivel() + " XP";
+        tinta.setColor(Color.GRAY);
+        tinta.setTextSize(18);
+        canvas.drawText(xpText, getWidth() - 30, 110, tinta);
+    }
+    
+    private void desenharTitulo(Canvas canvas) {
+        float cx = getWidth() / 2f;
+        
+        tinta.setColor(Color.argb(50, 0, 0, 0));
+        tinta.setTextSize(55);
+        tinta.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("8 BALL POOL", cx + 3, 190 + 3, tinta);
+        
+        tinta.setColor(Color.WHITE);
+        tinta.setTextSize(55);
+        tinta.setTypeface(Typeface.DEFAULT_BOLD);
+        canvas.drawText("8 BALL POOL", cx, 190, tinta);
+        
+        tinta.setColor(COR_DOURADO);
+        tinta.setTextSize(22);
+        tinta.setTypeface(Typeface.DEFAULT);
+        canvas.drawText("★ Projeto 8 ★", cx, 225, tinta);
+        
+        tinta.setColor(COR_DOURADO);
+        tinta.setStrokeWidth(2);
+        tinta.setStyle(Paint.Style.STROKE);
+        canvas.drawLine(cx - 150, 235, cx + 150, 235, tinta);
+    }
+    
+    private void desenharBotao(Canvas canvas, RectF rect, String texto, int cor, int corTexto, boolean destaque) {
+        if (destaque) {
+            float pulse = (float) (1.0 + 0.03 * Math.sin(System.currentTimeMillis() / 500.0));
+            float cx = rect.centerX();
+            float cy = rect.centerY();
+            float w = rect.width() * pulse;
+            float h = rect.height() * pulse;
+            rect = new RectF(cx - w/2, cy - h/2, cx + w/2, cy + h/2);
+        }
+        
+        tinta.setColor(Color.argb(80, 0, 0, 0));
+        tinta.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(rect.left + 4, rect.top + 4, rect.right + 4, rect.bottom + 4, 15, 15, tinta);
+        
+        tinta.setColor(cor);
+        tinta.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(rect, 15, 15, tinta);
+        
+        tinta.setColor(Color.argb(100, 255, 255, 255));
+        tinta.setStyle(Paint.Style.STROKE);
+        tinta.setStrokeWidth(2);
+        canvas.drawRoundRect(rect, 15, 15, tinta);
+        
+        tinta.setColor(corTexto);
+        tinta.setTextSize(28);
+        tinta.setTextAlign(Paint.Align.CENTER);
+        tinta.setTypeface(destaque ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+        canvas.drawText(texto, rect.centerX(), rect.centerY() + 10, tinta);
     }
 
     @Override
@@ -110,17 +200,30 @@ public class TelaMenu extends View {
         if (e.getAction() == MotionEvent.ACTION_UP) {
             float x = e.getX(), y = e.getY();
             
-            if (btnJogar.contains(x, y)) {
-                ((MainActivity) getContext()).trocarTela(new TelaMesas(getContext()));
-                return true;
-            }
-            
-            if (btnPerfil.contains(x, y)) {
+            // Avatar -> Perfil
+            float dx = x - avatarX;
+            float dy = y - avatarY;
+            if (Math.sqrt(dx*dx + dy*dy) < avatarRaio + 20) {
                 ((MainActivity) getContext()).trocarTela(new TelaPerfil(getContext()));
                 return true;
             }
             
-            if (btnSair.contains(x, y)) {
+            if (btnJogar != null && btnJogar.contains(x, y)) {
+                ((MainActivity) getContext()).trocarTela(new TelaMesas(getContext()));
+                return true;
+            }
+            
+            if (btnPerfil != null && btnPerfil.contains(x, y)) {
+                ((MainActivity) getContext()).trocarTela(new TelaPerfil(getContext()));
+                return true;
+            }
+            
+            if (btnLoja != null && btnLoja.contains(x, y)) {
+                android.widget.Toast.makeText(getContext(), "🛒 Loja em breve!", android.widget.Toast.LENGTH_SHORT).show();
+                return true;
+            }
+            
+            if (btnSair != null && btnSair.contains(x, y)) {
                 android.os.Process.killProcess(android.os.Process.myPid());
                 return true;
             }
