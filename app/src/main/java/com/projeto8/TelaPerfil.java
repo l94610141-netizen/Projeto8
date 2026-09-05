@@ -12,11 +12,14 @@ public class TelaPerfil extends View {
     Paint tinta = new Paint();
     GerenciadorJogador jogador;
     RectF btnVoltar;
+    String[] emojis = {"🎱", "🏆", "⭐", "🎯", "🔥", "💪", "👑", "🌟"};
+    int avatarIndex = 0;
     
     public TelaPerfil(Context context) {
         super(context);
         jogador = new GerenciadorJogador(context);
         setBackgroundColor(Color.parseColor("#0d0d1a"));
+        avatarIndex = (int)(System.currentTimeMillis() % emojis.length);
     }
 
     @Override
@@ -40,14 +43,14 @@ public class TelaPerfil extends View {
         tinta.setColor(Color.WHITE);
         tinta.setTextSize(50);
         tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("👤 MEU PERFIL", getWidth()/2, 100, tinta);
+        canvas.drawText("👤 MEU PERFIL", getWidth()/2, 90, tinta);
         
-        // Nível - Grande
+        // Avatar grande
         float cx = getWidth()/2;
-        float cy = 220;
-        float raio = 100;
+        float cy = 200;
+        float raio = 80;
         
-        // Círculo do nível
+        // Círculo do avatar
         tinta.setColor(Color.parseColor("#FFD700"));
         tinta.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx, cy, raio, tinta);
@@ -55,20 +58,24 @@ public class TelaPerfil extends View {
         tinta.setStyle(Paint.Style.STROKE);
         tinta.setStrokeWidth(5);
         canvas.drawCircle(cx, cy, raio, tinta);
+        
+        // Emoji do avatar
         tinta.setColor(Color.BLACK);
         tinta.setStyle(Paint.Style.FILL);
-        tinta.setTextSize(60);
-        canvas.drawText(String.valueOf(nivel), cx, cy + 22, tinta);
+        tinta.setTextSize(70);
+        tinta.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(emojis[avatarIndex], cx, cy + 25, tinta);
         
-        tinta.setColor(Color.WHITE);
-        tinta.setTextSize(25);
-        canvas.drawText("NÍVEL", cx, cy - 70, tinta);
+        // Nível abaixo do avatar
+        tinta.setColor(Color.parseColor("#FFD700"));
+        tinta.setTextSize(30);
+        canvas.drawText("⭐ NÍVEL " + nivel, cx, cy + raio + 45, tinta);
         
         // Barra de XP
         float barX = 80;
-        float barY = 350;
+        float barY = cy + raio + 70;
         float barWidth = getWidth() - 160;
-        float barHeight = 35;
+        float barHeight = 30;
         
         tinta.setColor(Color.parseColor("#2a2a4a"));
         tinta.setStyle(Paint.Style.FILL);
@@ -78,12 +85,12 @@ public class TelaPerfil extends View {
         canvas.drawRoundRect(barX, barY, barX + (barWidth * progresso / 100), barY + barHeight, 20, 20, tinta);
         
         tinta.setColor(Color.WHITE);
-        tinta.setTextSize(22);
+        tinta.setTextSize(20);
         tinta.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(xp + " / " + xpMax + " XP", barX + barWidth/2, barY + 25, tinta);
+        canvas.drawText(xp + " / " + xpMax + " XP", barX + barWidth/2, barY + 22, tinta);
         
         // Estatísticas
-        float statsY = 430;
+        float statsY = barY + barHeight + 50;
         tinta.setColor(Color.parseColor("#FFD700"));
         tinta.setTextSize(30);
         tinta.setTextAlign(Paint.Align.LEFT);
@@ -91,11 +98,11 @@ public class TelaPerfil extends View {
         
         statsY += 50;
         tinta.setColor(Color.WHITE);
-        tinta.setTextSize(28);
+        tinta.setTextSize(26);
         canvas.drawText("🎯 Partidas: " + partidas, 80, statsY, tinta);
-        statsY += 50;
+        statsY += 45;
         canvas.drawText("🏆 Vitórias: " + vitorias, 80, statsY, tinta);
-        statsY += 50;
+        statsY += 45;
         float taxa = partidas > 0 ? (vitorias * 100 / partidas) : 0;
         canvas.drawText("📈 Taxa de vitória: " + (int)taxa + "%", 80, statsY, tinta);
         
@@ -113,8 +120,21 @@ public class TelaPerfil extends View {
     public boolean onTouchEvent(MotionEvent e) {
         if (e.getAction() == MotionEvent.ACTION_UP) {
             float x = e.getX(), y = e.getY();
+            
             if (btnVoltar.contains(x, y)) {
                 ((MainActivity) getContext()).trocarTela(new TelaMenu(getContext()));
+                return true;
+            }
+            
+            // Clique no avatar - troca o emoji (preparado para futuras imagens)
+            float cx = getWidth()/2;
+            float cy = 200;
+            float raio = 80;
+            float dx = x - cx;
+            float dy = y - cy;
+            if (Math.sqrt(dx*dx + dy*dy) < raio) {
+                avatarIndex = (avatarIndex + 1) % emojis.length;
+                invalidate();
                 return true;
             }
         }
