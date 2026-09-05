@@ -32,8 +32,8 @@ public class GameView extends View {
         void atualizar() {
             x += vx;
             y += vy;
-            vx *= 0.98f;
-            vy *= 0.98f;
+            vx *= 0.985f;
+            vy *= 0.985f;
             if (Math.abs(vx) < 0.01f) vx = 0;
             if (Math.abs(vy) < 0.01f) vy = 0;
         }
@@ -64,6 +64,17 @@ public class GameView extends View {
     boolean venceu = false;
     float startX = -1, startY = -1;
     boolean arrastando = false;
+    
+    // Caçapas
+    float[][] cacapas = {
+        {70, 70},        // Canto superior esquerdo
+        {0, 0},          // Será calculado
+        {0, 0},          // Será calculado
+        {70, 0},         // Canto inferior esquerdo
+        {0, 0},          // Será calculado
+        {0, 0}           // Será calculado
+    };
+    float raioCacapa = 30;
 
     public GameView(Context context, String cidade) {
         super(context);
@@ -78,13 +89,17 @@ public class GameView extends View {
         jogoFinalizado = false;
         venceu = false;
         
-        bolaBranca = new Bola(200, 500, 12, Color.WHITE, true);
+        bolaBranca = new Bola(200, getHeight()/2, 12, Color.WHITE, true);
         bolas.add(bolaBranca);
         
+        float cx = getWidth() - 200;
+        float cy = getHeight()/2;
         float[][] pos = {
-            {550, 500}, {580, 470}, {580, 530}, {610, 440}, {610, 500},
-            {610, 560}, {640, 410}, {640, 470}, {640, 530}, {640, 590},
-            {670, 380}, {670, 440}, {670, 500}, {670, 560}, {670, 620}
+            {cx, cy},
+            {cx + 30, cy - 25}, {cx + 30, cy + 25},
+            {cx + 60, cy - 50}, {cx + 60, cy}, {cx + 60, cy + 50},
+            {cx + 90, cy - 75}, {cx + 90, cy - 25}, {cx + 90, cy + 25}, {cx + 90, cy + 75},
+            {cx + 120, cy - 100}, {cx + 120, cy - 50}, {cx + 120, cy}, {cx + 120, cy + 50}, {cx + 120, cy + 100}
         };
         int[] cores = {Color.YELLOW, Color.BLUE, Color.RED, Color.MAGENTA, 
                        Color.CYAN, Color.GREEN, Color.GRAY, Color.BLACK,
@@ -94,6 +109,15 @@ public class GameView extends View {
         for (int i = 0; i < 15; i++) {
             bolas.add(new Bola(pos[i][0], pos[i][1], 11, cores[i], false));
         }
+        
+        // Calcular posições das caçapas
+        float margem = 50;
+        float w = getWidth();
+        float h = getHeight();
+        cacapas[1] = new float[]{w/2, margem};
+        cacapas[2] = new float[]{w - margem, margem};
+        cacapas[4] = new float[]{w/2, h - margem};
+        cacapas[5] = new float[]{w - margem, h - margem};
     }
 
     @Override
@@ -101,6 +125,7 @@ public class GameView extends View {
         super.onDraw(canvas);
         canvas.drawColor(Color.parseColor("#0a0a1a"));
         
+        // Cabeçalho
         tinta.setColor(Color.parseColor("#FFD700"));
         tinta.setTextSize(20);
         tinta.setTextAlign(Paint.Align.LEFT);
@@ -114,30 +139,56 @@ public class GameView extends View {
         tinta.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("🎯 " + bolasAfundadas + "/15", getWidth() - 20, 30, tinta);
         
+        // Mesa
         float margem = 50;
         tinta.setColor(Color.parseColor("#35654d"));
         tinta.setStyle(Paint.Style.FILL);
         canvas.drawRect(margem, 50, getWidth() - margem, getHeight() - 50, tinta);
         
+        // Bordas
         tinta.setColor(Color.parseColor("#8B4513"));
         tinta.setStyle(Paint.Style.STROKE);
         tinta.setStrokeWidth(10);
         canvas.drawRect(margem, 50, getWidth() - margem, getHeight() - 50, tinta);
         
+        // Caçapas (buracos)
+        tinta.setColor(Color.BLACK);
+        tinta.setStyle(Paint.Style.FILL);
+        for (float[] c : cacapas) {
+            canvas.drawCircle(c[0], c[1], raioCacapa, tinta);
+        }
+        
+        // Atualizar física
         if (!jogoFinalizado) {
             atualizarFisica();
         }
         
+        // Desenhar bolas
         for (Bola b : bolas) {
             b.desenhar(canvas, tinta);
         }
         
+        // Mira
         if (arrastando && startX != -1) {
             tinta.setColor(Color.argb(150, 255, 255, 255));
             tinta.setStrokeWidth(2);
             canvas.drawLine(bolaBranca.x, bolaBranca.y, startX, startY, tinta);
+            
+            // Potência
+            float dx = startX - bolaBranca.x;
+            float dy = startY - bolaBranca.y;
+            float dist = (float) Math.sqrt(dx*dx + dy*dy);
+            float potencia = Math.min(dist / 15, 15);
+            
+            tinta.setColor(Color.parseColor("#333366"));
+            tinta.setStyle(Paint.Style.FILL);
+            canvas.drawRect(50, getHeight() - 40, 250, getHeight() - 15, tinta);
+            
+            tinta.setColor(potencia > 10 ? Color.RED : potencia > 5 ? Color.YELLOW : Color.GREEN);
+            canvas.drawRect(50, getHeight() - 40, 50 + potencia * 13, getHeight() - 15, tinta);
         }
         
+        // Fim de jogo
         if (jogoFinalizado) {
             tinta.setColor(Color.argb(200, 0, 0, 0));
             tinta.setStyle(Paint.Style.FILL);
@@ -156,12 +207,20 @@ public class GameView extends View {
             
             tinta.setColor(Color.parseColor("#2ECC71"));
             tinta.setStyle(Paint.Style.FILL);
-            float bx = getWidth()/2 - 100;
+            float bx = getWidth()/2 - 120;
             float by = getHeight()/2 + 80;
-            canvas.drawRoundRect(bx, by, bx + 200, by + 60, 20, 20, tinta);
+            canvas.drawRoundRect(bx, by, bx + 240, by + 60, 20, 20, tinta);
             tinta.setColor(Color.BLACK);
             tinta.setTextSize(25);
-            canvas.drawText("🔄 JOGAR", getWidth()/2, by + 40, tinta);
+            canvas.drawText("🔄 JOGAR NOVAMENTE", getWidth()/2, by + 40, tinta);
+            
+            // Botão menu
+            tinta.setColor(Color.parseColor("#333366"));
+            tinta.setStyle(Paint.Style.FILL);
+            by = getHeight()/2 + 160;
+            canvas.drawRoundRect(bx, by, bx + 240, by + 60, 20, 20, tinta);
+            tinta.setColor(Color.WHITE);
+            canvas.drawText("🏠 MENU", getWidth()/2, by + 40, tinta);
         }
         
         postInvalidateDelayed(16);
@@ -169,20 +228,44 @@ public class GameView extends View {
     
     private void atualizarFisica() {
         float margem = 50;
+        float w = getWidth();
+        float h = getHeight();
+        
         for (Bola b : bolas) {
             b.atualizar();
             
+            // Colisão com bordas
             if (b.x - b.raio < margem) { b.x = margem + b.raio; b.vx = -b.vx * 0.8f; }
-            if (b.x + b.raio > getWidth() - margem) { b.x = getWidth() - margem - b.raio; b.vx = -b.vx * 0.8f; }
+            if (b.x + b.raio > w - margem) { b.x = w - margem - b.raio; b.vx = -b.vx * 0.8f; }
             if (b.y - b.raio < 50) { b.y = 50 + b.raio; b.vy = -b.vy * 0.8f; }
-            if (b.y + b.raio > getHeight() - 50) { b.y = getHeight() - 50 - b.raio; b.vy = -b.vy * 0.8f; }
+            if (b.y + b.raio > h - 50) { b.y = h - 50 - b.raio; b.vy = -b.vy * 0.8f; }
             
-            if (b.x < 70 && b.y < 70) afundarBola(b);
-            else if (b.x > getWidth() - 70 && b.y < 70) afundarBola(b);
-            else if (b.x < 70 && b.y > getHeight() - 70) afundarBola(b);
-            else if (b.x > getWidth() - 70 && b.y > getHeight() - 70) afundarBola(b);
+            // Verificar caçapas
+            for (float[] c : cacapas) {
+                float dx = b.x - c[0];
+                float dy = b.y - c[1];
+                if (Math.sqrt(dx*dx + dy*dy) < raioCacapa) {
+                    if (b.branca) {
+                        b.x = 200;
+                        b.y = h/2;
+                        b.vx = 0;
+                        b.vy = 0;
+                    } else {
+                        bolas.remove(b);
+                        bolasAfundadas++;
+                        if (bolasAfundadas >= 15) {
+                            jogoFinalizado = true;
+                            venceu = true;
+                            jogador.addXp(100);
+                            jogador.registrarPartida(true);
+                        }
+                        return;
+                    }
+                }
+            }
         }
         
+        // Colisões entre bolas
         for (int i = 0; i < bolas.size(); i++) {
             for (int j = i+1; j < bolas.size(); j++) {
                 Bola a = bolas.get(i);
@@ -212,23 +295,20 @@ public class GameView extends View {
                 }
             }
         }
-    }
-    
-    private void afundarBola(Bola b) {
-        if (b.branca) {
-            b.x = 200;
-            b.y = 500;
-            b.vx = 0;
-            b.vy = 0;
-            return;
+        
+        // Verificar derrota
+        boolean todasParadas = true;
+        for (Bola b : bolas) {
+            if (b.vx != 0 || b.vy != 0) {
+                todasParadas = false;
+                break;
+            }
         }
-        bolas.remove(b);
-        bolasAfundadas++;
-        if (bolasAfundadas >= 15) {
+        if (todasParadas && bolas.size() == 1 && bolas.get(0).branca && bolasAfundadas < 15) {
             jogoFinalizado = true;
-            venceu = true;
-            jogador.addXp(100);
-            jogador.registrarPartida(true);
+            venceu = false;
+            jogador.addXp(20);
+            jogador.registrarPartida(false);
         }
     }
 
@@ -237,11 +317,21 @@ public class GameView extends View {
         if (jogoFinalizado) {
             if (e.getAction() == MotionEvent.ACTION_UP) {
                 float x = e.getX(), y = e.getY();
-                float bx = getWidth()/2 - 100;
+                float bx = getWidth()/2 - 120;
                 float by = getHeight()/2 + 80;
-                if (x > bx && x < bx + 200 && y > by && y < by + 60) {
+                
+                // Botão "Jogar Novamente"
+                if (x > bx && x < bx + 240 && y > by && y < by + 60) {
                     iniciarJogo();
                     invalidate();
+                    return true;
+                }
+                
+                // Botão "Menu"
+                by = getHeight()/2 + 160;
+                if (x > bx && x < bx + 240 && y > by && y < by + 60) {
+                    ((MainActivity) getContext()).trocarTela(new TelaMenu(getContext()));
+                    return true;
                 }
             }
             return true;
